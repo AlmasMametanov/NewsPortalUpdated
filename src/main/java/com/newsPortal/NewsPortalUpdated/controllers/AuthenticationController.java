@@ -5,17 +5,17 @@ import com.newsPortal.NewsPortalUpdated.dto.UserDTO;
 import com.newsPortal.NewsPortalUpdated.models.User;
 import com.newsPortal.NewsPortalUpdated.security.JWTUtil;
 import com.newsPortal.NewsPortalUpdated.services.UserService;
-import com.newsPortal.NewsPortalUpdated.util.EmailAlreadyExistsException;
-import com.newsPortal.NewsPortalUpdated.util.ErrorResponse;
-import com.newsPortal.NewsPortalUpdated.util.UserNotFoundException;
-import com.newsPortal.NewsPortalUpdated.util.UserValidator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,58 +26,53 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class AuthenticationController {
     private final AuthenticationManager authenticationManager;
-    private final UserValidator userValidator;
     private final UserService userService;
     private final JWTUtil jwtUtil;
     private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final Logger logger = LogManager.getLogger(this.getClass().getName());
 
     @Autowired
-    public AuthenticationController(AuthenticationManager authenticationManager, UserValidator userValidator, UserService userService, JWTUtil jwtUtil, ModelMapper modelMapper) {
+    public AuthenticationController(AuthenticationManager authenticationManager, UserService userService, JWTUtil jwtUtil, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
-        this.userValidator = userValidator;
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.modelMapper = modelMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> performLogin(@RequestBody @Valid AuthenticationDTO authenticationDTO, BindingResult bindingResult) {
-        if (bindingResult.hasErrors())
+        if (bindingResult.hasErrors()) {
+            logger.info("Have errors in request - " + bindingResult.getAllErrors());
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
-
+        }
         UsernamePasswordAuthenticationToken authInputToken = new UsernamePasswordAuthenticationToken(
                 authenticationDTO.getEmail(), authenticationDTO.getPassword());
-
+        Authentication authentication = null;
         try {
-            authenticationManager.authenticate(authInputToken);
+            authentication = authenticationManager.authenticate(authInputToken);
         } catch (BadCredentialsException exception) {
+            logger.info("Invalid email or password - " + exception);
             return ResponseEntity.badRequest().body(Map.of("message", "Invalid email or password"));
         }
-        String token = jwtUtil.generateToken(authenticationDTO.getEmail());
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String token = jwtUtil.generateToken(userDetails);
         return ResponseEntity.ok(Map.of("jwt_token", token));
     }
 
     @PostMapping("/registration")
     public ResponseEntity<?> performRegistration(@RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
-        if (bindingResult.hasErrors())
+        if (bindingResult.hasErrors()) {
+            logger.info("Have errors in request - " + bindingResult.getAllErrors());
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
+        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         userService.createUser(mapToUser(userDTO));
         return ResponseEntity.ok().build();
     }
 
     private User mapToUser(UserDTO userDTO) {
         return modelMapper.map(userDTO, User.class);
-    }
-
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    private ErrorResponse handleEmailAlreadyExistsException(EmailAlreadyExistsException exception) {
-        return new ErrorResponse(HttpStatus.CONFLICT.value(), exception.getMessage());
-    }
-
-    @ExceptionHandler(value = UserNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    private ErrorResponse handleUserNotFoundException(UserNotFoundException exception) {
-        return new ErrorResponse(HttpStatus.NOT_FOUND.value(), exception.getMessage());
     }
 }

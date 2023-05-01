@@ -2,9 +2,11 @@ package com.newsPortal.NewsPortalUpdated.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.newsPortal.NewsPortalUpdated.models.Role;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
+import java.util.List;
 
 public class UserDTO {
     private Long id;
@@ -14,6 +16,8 @@ public class UserDTO {
     private String email;
 
     private String password;
+
+    private List<Role> roleList;
 
     public Long getId() {
         return id;
@@ -39,5 +43,13 @@ public class UserDTO {
     @JsonProperty
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public List<Role> getRoleList() {
+        return roleList;
+    }
+
+    public void setRoleList(List<Role> roleList) {
+        this.roleList = roleList;
     }
 }

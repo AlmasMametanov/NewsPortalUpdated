@@ -1,13 +1,14 @@
 package com.newsPortal.NewsPortalUpdated.controllers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newsPortal.NewsPortalUpdated.dto.CategoryDTO;
 import com.newsPortal.NewsPortalUpdated.models.Category;
 import com.newsPortal.NewsPortalUpdated.services.CategoryService;
-import com.newsPortal.NewsPortalUpdated.util.CategoryNotFoundException;
-import com.newsPortal.NewsPortalUpdated.util.ErrorResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class CategoryController {
     private final ModelMapper modelMapper;
     private final CategoryService categoryService;
+    private final Logger logger = LogManager.getLogger(this.getClass().getName());
 
     @Autowired
     public CategoryController(ModelMapper modelMapper, CategoryService categoryService) {
@@ -27,24 +29,29 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
-    @GetMapping("/categories") // здесь redis использовать нужно, чтобы кэшировать категории
+    @GetMapping("/categories")
     public ResponseEntity<List<CategoryDTO>> getAllCategory() {
-        return ResponseEntity.ok(categoryService.findAllCategory(null).stream().map(this::mapToCategoryDTO)
+        ObjectMapper mapper = new ObjectMapper();
+        return ResponseEntity.ok(mapper.convertValue(categoryService.findAllCategory(null), new TypeReference<List<Category>>(){}).stream().map(this::mapToCategoryDTO)
                 .collect(Collectors.toList()));
     }
 
     @PostMapping("/category")
     public ResponseEntity<Object> createCategory(@RequestBody @Valid CategoryDTO categoryDTO, BindingResult bindingResult) {
-        if (bindingResult.hasErrors())
+        if (bindingResult.hasErrors()) {
+            logger.info("Have errors in request - " + bindingResult.getAllErrors());
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
         categoryService.createCategory(mapToCategory(categoryDTO));
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/category")
     public ResponseEntity<Object> updateCategory(@RequestBody @Valid CategoryDTO categoryDTO, BindingResult bindingResult) {
-        if (bindingResult.hasErrors())
+        if (bindingResult.hasErrors()) {
+            logger.info("Have errors in request - " + bindingResult.getAllErrors());
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
         categoryService.updateCategory(mapToCategory(categoryDTO));
         return ResponseEntity.ok().build();
     }
@@ -61,12 +68,6 @@ public class CategoryController {
 
     private Category mapToCategory(CategoryDTO categoryDTO) {
         return modelMapper.map(categoryDTO, Category.class);
-    }
-
-    @ExceptionHandler(value = CategoryNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    private ErrorResponse handleCategoryNotFoundException(CategoryNotFoundException exception) {
-        return new ErrorResponse(HttpStatus.NOT_FOUND.value(), exception.getMessage());
     }
 
 }

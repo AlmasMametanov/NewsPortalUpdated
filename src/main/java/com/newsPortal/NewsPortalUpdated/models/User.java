@@ -7,6 +7,7 @@ import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -26,12 +27,25 @@ public class User implements Serializable {
     @NotEmpty(message = "Password не должен быть пустым")
     private String password;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_role",
+            joinColumns = {@JoinColumn(name = "user_id")},
+            inverseJoinColumns = {@JoinColumn(name = "role_id")}
+    )
+    private List<Role> roleList;
+
     public User() {
     }
 
     public User(String email, String password) {
         this.email = email;
         this.password = password;
+    }
+
+    public User(Long id, String email) {
+        this.id = id;
+        this.email = email;
     }
 
     public User(Long id, String email, String password) {
@@ -64,6 +78,16 @@ public class User implements Serializable {
     @JsonProperty
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    @JsonIgnore
+    public List<Role> getRoleList() {
+        return roleList;
+    }
+
+    @JsonProperty
+    public void setRoleList(List<Role> roleList) {
+        this.roleList = roleList;
     }
 
     @Override

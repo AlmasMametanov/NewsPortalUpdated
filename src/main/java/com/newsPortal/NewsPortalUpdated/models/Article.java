@@ -49,6 +49,14 @@ public class Article implements Serializable {
         this.updatedDate = updatedDate;
     }
 
+    public Article(Long id, String headline, String content, Timestamp updatedDate, Category category) {
+        this.id = id;
+        this.headline = headline;
+        this.content = content;
+        this.updatedDate = updatedDate;
+        this.category = category;
+    }
+
     public Long getId() {
         return id;
     }

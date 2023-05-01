@@ -3,11 +3,10 @@ package com.newsPortal.NewsPortalUpdated.controllers;
 import com.newsPortal.NewsPortalUpdated.dto.ArticleDTO;
 import com.newsPortal.NewsPortalUpdated.models.Article;
 import com.newsPortal.NewsPortalUpdated.services.ArticleService;
-import com.newsPortal.NewsPortalUpdated.util.ArticleNotFoundException;
-import com.newsPortal.NewsPortalUpdated.util.ErrorResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +20,7 @@ public class ArticleController {
 
     private final ArticleService articleService;
     private final ModelMapper modelMapper;
+    private final Logger logger = LogManager.getLogger(this.getClass().getName());
 
     @Autowired
     public ArticleController(ArticleService articleService, ModelMapper modelMapper) {
@@ -41,16 +41,20 @@ public class ArticleController {
 
     @PostMapping("/article")
     public ResponseEntity<Object> createArticle(@RequestBody @Valid ArticleDTO articleDTO, BindingResult bindingResult) {
-        if (bindingResult.hasErrors())
+        if (bindingResult.hasErrors()) {
+            logger.info("Have errors in request - " + bindingResult.getAllErrors());
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
         articleService.createArticle(mapToArticle(articleDTO));
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/article")
     public ResponseEntity<Object> updateArticle(@RequestBody @Valid ArticleDTO articleDTO, BindingResult bindingResult) {
-        if (bindingResult.hasErrors())
+        if (bindingResult.hasErrors()) {
+            logger.info("Have errors in request - " + bindingResult.getAllErrors());
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
         articleService.updateById(mapToArticle(articleDTO));
         return ResponseEntity.ok().build();
     }
@@ -67,11 +71,5 @@ public class ArticleController {
 
     private ArticleDTO mapToArticleDTO(Article article) {
         return modelMapper.map(article, ArticleDTO.class);
-    }
-
-    @ExceptionHandler(ArticleNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    private ErrorResponse handleArticleNotFoundException(ArticleNotFoundException exception) {
-        return new ErrorResponse(HttpStatus.NOT_FOUND.value(), exception.getMessage());
     }
 }

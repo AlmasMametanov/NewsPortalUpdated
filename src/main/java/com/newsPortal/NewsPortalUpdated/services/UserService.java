@@ -11,4 +11,5 @@ public interface UserService {
     void createUser(User user);
     void updateEmailById(User updatedUser);
     void updatePasswordById(User updatedUser);
+    void updateRoleByUserId(User updatedUser);
 }

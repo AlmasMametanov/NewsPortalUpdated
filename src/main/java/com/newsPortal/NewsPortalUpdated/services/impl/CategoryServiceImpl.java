@@ -5,6 +5,8 @@ import com.newsPortal.NewsPortalUpdated.repositories.CategoryRepository;
 import com.newsPortal.NewsPortalUpdated.services.CategoryService;
 import com.newsPortal.NewsPortalUpdated.util.CategoryNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,11 +25,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "categories", key = "'categories'")
     public void createCategory(Category category) {
         categoryRepository.save(category);
     }
 
     @Override
+    @Cacheable(value = "categories", key = "'categories'")
     public List<Category> findAllCategory(Long parentCategoryId) {
         List<Category> categoryList = categoryRepository.findAllByParentCategoryId(parentCategoryId);
         if (!categoryList.isEmpty())
@@ -38,6 +42,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "categories", key = "'categories'")
     public void updateCategory(Category updatedCategory) {
         Optional<Category> category = categoryRepository.findById(updatedCategory.getId());
         if (category.isPresent()) {
@@ -50,6 +55,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "categories", key = "'categories'")
     public void deleteById(Long categoryId) {
         Optional<Category> category = categoryRepository.findById(categoryId);
         if (category.isPresent())
