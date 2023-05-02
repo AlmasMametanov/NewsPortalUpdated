@@ -3,7 +3,6 @@ version: '3.9'
 services:
   app:
     build: .
-    image: 'ideronn/newsportalupdated-app:latest'
     container_name: "newsPortalService"
     ports:
       - "8080:8080"
