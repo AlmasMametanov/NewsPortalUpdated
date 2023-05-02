@@ -1,9 +1,6 @@
 # NewsPortalUpdated
 It's REST API project using Spring Boot and Spring Security.<br/>
-The project includes the implementation of authentication and authorization <br/>
-using JWT tokens to securely transfer data between client and server. <br/>
-Redis caching technology is used. <br/>
-The project also implemented unit tests.<br/>
+The project includes the implementation of authentication and authorization using JWT tokens to securely transfer data between client and server. Redis caching technology is used. The project also implemented unit tests.<br/>
 Docker is used to simplify deployment and project management.<br/>
 ## Technologies
 * Spring Boot, Spring Security, Spring Data JPA
